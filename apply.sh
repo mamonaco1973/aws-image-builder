@@ -7,7 +7,7 @@
 # This script performs an apply-only workflow to:
 # - Validate the local execution environment
 # - Provision networking infrastructure with Terraform
-# - Build Linux and Windows AMIs using Packer
+# - Build Linux and Windows AMIs with EC2 Image Builder
 # - Deploy EC2 instances from the generated AMIs
 # - Output public access details for deployed instances
 #
@@ -38,7 +38,7 @@ set -euo pipefail
 # STEP 1: SET AWS DEFAULT REGION
 # ==============================================================================
 #
-# Define the AWS region used by all subsequent AWS CLI, Terraform, and Packer
+# Define the AWS region used by all subsequent AWS CLI and Terraform
 # operations executed by this script.
 # ==============================================================================
 
@@ -50,8 +50,8 @@ export AWS_REGION="us-east-2"
 # STEP 2: TERRAFORM APPLY - NETWORKING INFRASTRUCTURE
 # ==============================================================================
 #
-# Provision base networking resources required for Packer builds and EC2
-# deployments, including VPCs, subnets, and security groups.
+# Provision base networking resources required for Image Builder builds and
+# EC2 deployments: VPC, subnets, security groups and the builder secret.
 # ==============================================================================
 
 echo "NOTE: Applying networking infrastructure"
@@ -62,69 +62,22 @@ terraform apply -auto-approve
 cd ..
 
 # ==============================================================================
-# STEP 3: BUILD AMIS WITH PACKER
+# STEP 3: BUILD AMIS WITH EC2 IMAGE BUILDER
 # ==============================================================================
 #
-# Retrieve required secrets and identifiers, then build Linux and Windows AMIs
-# using pre-defined Packer templates.
+# One terraform apply builds both AMIs in parallel. Each
+# aws_imagebuilder_image resource starts a build and blocks until its AMI is
+# available, so this step takes as long as the slower (Windows) build.
+# The build instances read the builder password from Secrets Manager
+# themselves; nothing is passed in from here.
 # ==============================================================================
 
-# Retrieve the Packer provisioning password from AWS Secrets Manager
-password=$(aws secretsmanager get-secret-value \
-  --secret-id packer-credentials \
-  --query 'SecretString' \
-  --output text | jq -r '.password')
+echo "NOTE: Building AMIs with EC2 Image Builder"
 
-if [[ -z "$password" || "$password" == "null" ]]; then
-  echo "ERROR: Failed to retrieve Packer password"
-  exit 1
-fi
-
-# Resolve the VPC ID by Name tag
-vpc_id=$(aws ec2 describe-vpcs \
-  --filters "Name=tag:Name,Values=packer-vpc" \
-  --query "Vpcs[0].VpcId" \
-  --output text)
-
-# Resolve the subnet ID by Name tag
-subnet_id=$(aws ec2 describe-subnets \
-  --filters "Name=tag:Name,Values=packer-subnet-1" \
-  --query "Subnets[0].SubnetId" \
-  --output text)
-
-cd 02-packer
-
-# ------------------------------------------------------------------------------
-# SUBSTEP: BUILD LINUX AMI
-# ------------------------------------------------------------------------------
-
-cd linux
-echo "NOTE: Building Linux AMI"
-
-packer init linux_ami.pkr.hcl
-packer build \
-  -var "password=$password" \
-  -var "vpc_id=$vpc_id" \
-  -var "subnet_id=$subnet_id" \
-  linux_ami.pkr.hcl
-
+cd 02-image-builder
+terraform init
+terraform apply -auto-approve
 cd ..
-
-# ------------------------------------------------------------------------------
-# SUBSTEP: BUILD WINDOWS AMI
-# ------------------------------------------------------------------------------
-
-cd windows
-echo "NOTE: Building Windows AMI"
-
-packer init windows_ami.pkr.hcl
-packer build \
-  -var "password=$password" \
-  -var "vpc_id=$vpc_id" \
-  -var "subnet_id=$subnet_id" \
-  windows_ami.pkr.hcl
-
-cd ../..
 
 # ==============================================================================
 # STEP 4: TERRAFORM APPLY - EC2 DEPLOYMENT

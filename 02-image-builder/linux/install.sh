@@ -27,7 +27,7 @@ sudo systemctl enable apache2 >/dev/null 2>&1
 sudo systemctl start apache2 >/dev/null 2>&1
 
 # Copy prebuilt website content from /tmp/html to Apache's default document root
-# Assumes files are staged ahead of time (e.g., by Packer or cloud-init)
+# Assumes files are staged ahead of time (by the Image Builder component)
 sudo cp /tmp/html/* /var/www/html/
 
 # Ensure snapd (Snap package manager daemon) is started

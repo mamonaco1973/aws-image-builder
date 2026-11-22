@@ -1,9 +1,11 @@
 # ==============================================================================
-# VPC CONFIGURATION FOR PACKER INFRASTRUCTURE
+# VPC CONFIGURATION FOR THE IMAGE BUILDER LAB
 # ==============================================================================
 #
-# This module provisions a minimal public VPC layout suitable for running Packer
-# builds that require outbound internet access (package installs, updates, etc).
+# A minimal public VPC for Image Builder build instances and the test servers.
+# Build instances get a public IP from map_public_ip_on_launch and reach SSM,
+# S3, Secrets Manager and package mirrors through the Internet Gateway; there
+# are no VPC endpoints. (The packer-* names are kept from the Packer version.)
 #
 # Topology:
 # - One VPC (10.0.0.0/24)

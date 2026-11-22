@@ -6,8 +6,9 @@ from inline SVG, so a `prefers-color-scheme` media query inside the document is
 silently dropped. The README pairs them with <picture>, which GitHub honours.
 
 A README diagram is studied, not narrated, so it is COMPLETE rather than
-minimal: both base images, both Packer builds, the secret that sets the packer
-password in both, and the two servers launched from the new AMIs are all on it.
+minimal: both base images, Image Builder and the two build instances it drives
+over SSM, the script bucket and the secret both builds read, and the two
+servers launched from the new AMIs are all on it.
 Run:  python3 make_diagram.py
 """
 
@@ -22,7 +23,7 @@ NW, NH = 420, 110                          # node width, height
 GUTTER = 140                               # between columns: room for a label
 MARGIN = 40
 COL = [MARGIN + i * (NW + GUTTER) for i in range(3)]
-ROW = [40 + i * 200 for i in range(3)]
+ROW = [40 + i * 200 for i in range(4)]
 W = MARGIN * 2 + NW * 3 + GUTTER * 2
 H = ROW[-1] + NH + 40 + 0
 TITLE_PX, SUB_PX, EDGE_PX = 26, 17, 16
@@ -102,63 +103,91 @@ def gutter_y(r):
 # Layout
 # ------------------------------------------------------------------------------
 # Two parallel pipelines, Linux on the left and Windows on the right: base
-# image, Packer-built AMI, server. The secret sits between them at the top
-# because both builds read it, and the client sits between the servers.
+# image, build instance, AMI, server. The middle column holds what both
+# builds share: Image Builder, which drives each build instance over SSM;
+# the S3 bucket the components download the scripts from; and the secret
+# both builds read the builder password from. The client sits between the
+# servers.
 #
 # id: (x, y, colour key, icon, title, subtitle[, "dashed"])
 NODES.update({
     "ubuntu":   (COL[0], ROW[0], "navy", "layers", "Ubuntu 24.04",
                  "Canonical base AMI"),
-    "secret":   (COL[1], ROW[0], "store", "key", "Secrets Manager",
-                 "packer-credentials"),
+    "ib":       (COL[1], ROW[0], "purple", "route", "EC2 Image Builder",
+                 "recipes + components"),
     "winbase":  (COL[2], ROW[0], "navy", "layers", "Windows Server 2025",
                  "Amazon base AMI"),
-    "games":    (COL[0], ROW[1], "blue", "layers", "games AMI",
-                 "Packer: Apache + 12 HTML games"),
-    "desktop":  (COL[2], ROW[1], "blue", "layers", "desktop AMI",
-                 "Packer: updates, Chrome, Firefox"),
-    "gsrv":     (COL[0], ROW[2], "amber", "monitor", "games-ec2-instance",
+    "gbuild":   (COL[0], ROW[1], "purple", "terminal", "games build",
+                 "m5.large, packer-subnet-1", "dashed"),
+    "bucket":   (COL[1], ROW[1], "store", "database", "S3 scripts bucket",
+                 "linux/ + windows/"),
+    "dbuild":   (COL[2], ROW[1], "purple", "terminal", "desktop build",
+                 "m5.large, packer-subnet-1", "dashed"),
+    "games":    (COL[0], ROW[2], "blue", "layers", "games AMI",
+                 "Apache + 12 HTML games"),
+    "secret":   (COL[1], ROW[2], "store", "key", "Secrets Manager",
+                 "builder-credentials"),
+    "desktop":  (COL[2], ROW[2], "blue", "layers", "desktop AMI",
+                 "updates, Chrome, Firefox"),
+    "gsrv":     (COL[0], ROW[3], "amber", "monitor", "games-ec2-instance",
                  "t3.micro, packer-subnet-1"),
-    "client":   (COL[1], ROW[2], "navy", "globe", "Browser / RDP client",
+    "client":   (COL[1], ROW[3], "navy", "globe", "Browser / RDP client",
                  "from the internet"),
-    "dsrv":     (COL[2], ROW[2], "amber", "monitor", "desktop-ec2-instance",
+    "dsrv":     (COL[2], ROW[3], "amber", "monitor", "desktop-ec2-instance",
                  "t3.medium, packer-subnet-2"),
 })
 
-ub, sec, wb = _r("ubuntu"), _r("secret"), _r("winbase")
-ga, da = _r("games"), _r("desktop")
+ub, ib, wb = _r("ubuntu"), _r("ib"), _r("winbase")
+gb, bk, db = _r("gbuild"), _r("bucket"), _r("dbuild")
+ga, sec, da = _r("games"), _r("secret"), _r("desktop")
 gs, cli, ds = _r("gsrv"), _r("client"), _r("dsrv")
-FAN = 60
+FAN = 70
 
 # id: (path, colour key, label, label_x, label_y, anchor[, "dashed"])
 EDGES = {
-    "e_gbuild": (f"M{ub[4]},{ub[3]} V{ga[1] - 5}", "navy",
-                 "packer build", ub[4] - 14, gutter_y(0) + 6, "end"),
-    "e_dbuild": (f"M{wb[4]},{wb[3]} V{da[1] - 5}", "navy",
-                 "packer build", wb[4] + 14, gutter_y(0) + 6, "start"),
-    "e_gpw":    (f"M{sec[4] - FAN},{sec[3]} V{gutter_y(0)} H{ga[4] + FAN} "
-                 f"V{ga[1] - 5}", "store",
-                 "password", gutter_x(0), gutter_y(0) - 8, "middle"),
-    "e_dpw":    (f"M{sec[4] + FAN},{sec[3]} V{gutter_y(0)} H{da[4] - FAN} "
-                 f"V{da[1] - 5}", "store",
-                 "password", gutter_x(1), gutter_y(0) - 8, "middle"),
+    "e_gparent": (f"M{ub[4] - FAN},{ub[3]} V{gb[1] - 5}", "navy",
+                  "parent image", ub[4] - FAN - 14, gutter_y(0) + 6, "end"),
+    "e_dparent": (f"M{wb[4] + FAN},{wb[3]} V{db[1] - 5}", "navy",
+                  "parent image", wb[4] + FAN + 14, gutter_y(0) + 6, "start"),
+    "e_gssm":   (f"M{ib[4] - FAN},{ib[3]} V{gutter_y(0)} H{gb[4] + FAN} "
+                 f"V{gb[1] - 5}", "purple",
+                 "SSM", gutter_x(0), gutter_y(0) - 8, "middle"),
+    "e_dssm":   (f"M{ib[4] + FAN},{ib[3]} V{gutter_y(0)} H{db[4] - FAN} "
+                 f"V{db[1] - 5}", "purple",
+                 "SSM", gutter_x(1), gutter_y(0) - 8, "middle"),
+    "e_gs3":    (f"M{bk[0]},{bk[5]} H{gb[2] + 5}", "store",
+                 "S3Download", gutter_x(0), bk[5] - 12, "middle"),
+    "e_ds3":    (f"M{bk[2]},{bk[5]} H{db[0] - 5}", "store",
+                 "S3Download", gutter_x(1), bk[5] - 12, "middle"),
+    "e_gpw":    (f"M{sec[0]},{sec[5] + 20} H{gutter_x(0)} V{gutter_y(1)} "
+                 f"H{gb[4] + FAN} V{gb[3] + 5}", "store",
+                 "password", gutter_x(0), gutter_y(1) - 8, "middle"),
+    "e_dpw":    (f"M{sec[2]},{sec[5] + 20} H{gutter_x(1)} V{gutter_y(1)} "
+                 f"H{db[4] - FAN} V{db[3] + 5}", "store",
+                 "password", gutter_x(1), gutter_y(1) - 8, "middle"),
+    "e_gami":   (f"M{gb[4] - FAN},{gb[3]} V{ga[1] - 5}", "navy",
+                 "snapshot", gb[4] - FAN - 14, gutter_y(1) + 6, "end"),
+    "e_dami":   (f"M{db[4] + FAN},{db[3]} V{da[1] - 5}", "navy",
+                 "snapshot", db[4] + FAN + 14, gutter_y(1) + 6, "start"),
     "e_glaunch": (f"M{ga[4]},{ga[3]} V{gs[1] - 5}", "navy",
-                 "launch", ga[4] + 14, gutter_y(1) + 6, "start"),
+                  "launch", ga[4] + 14, gutter_y(2) + 6, "start"),
     "e_dlaunch": (f"M{da[4]},{da[3]} V{ds[1] - 5}", "navy",
-                 "launch", da[4] + 14, gutter_y(1) + 6, "start"),
+                  "launch", da[4] + 14, gutter_y(2) + 6, "start"),
     "e_http":   (f"M{cli[0]},{cli[5]} H{gs[2] + 5}", "line",
                  "HTTP :80", gutter_x(0), cli[5] - 12, "middle"),
     "e_rdp":    (f"M{cli[2]},{cli[5]} H{ds[0] - 5}", "line",
                  "RDP :3389", gutter_x(1), cli[5] - 12, "middle"),
 }
 
-ALT = ("Packer builds two AMIs inside a pre-built VPC: a games AMI from Canonical's "
-       "Ubuntu 24.04 image, with Apache serving twelve HTML games, and a desktop AMI "
-       "from Amazon's Windows Server 2025 image, with Windows updates, Chrome and "
-       "Firefox, sysprepped with EC2Launch. Both builds read the packer account "
-       "password from Secrets Manager. Terraform then launches a server from each "
-       "AMI: a browser reaches the games server over HTTP, and an RDP client "
-       "reaches the Windows desktop server.")
+ALT = ("EC2 Image Builder builds two AMIs inside a pre-built VPC, driving each "
+       "build instance through SSM with no inbound ports. The games build starts "
+       "from Canonical's Ubuntu 24.04 image and installs Apache with twelve HTML "
+       "games; the desktop build starts from Amazon's Windows Server 2025 image "
+       "and installs Windows updates, Chrome and Firefox. Both build instances "
+       "download their scripts from an S3 bucket and read the builder account "
+       "password from Secrets Manager themselves. Terraform then launches a "
+       "server from each AMI: a browser reaches the games server over HTTP, and "
+       "an RDP client reaches the Windows desktop server.")
 
 # ------------------------------------------------------------------------------
 # Rendering

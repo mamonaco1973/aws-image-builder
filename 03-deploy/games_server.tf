@@ -3,7 +3,7 @@
 # ==============================================================================
 #
 # This resource deploys a games server EC2 instance using the most recent
-# custom AMI produced by the Packer build pipeline.
+# custom AMI produced by the Image Builder games recipe.
 #
 # The instance is launched into a public subnet with internet access and
 # attaches security groups required for web and administrative traffic.

@@ -3,7 +3,7 @@
 # ==============================================================================
 #
 # These data sources discover pre-existing AWS resources by tag instead of
-# creating new infrastructure. This allows Packer and Terraform to integrate
+# creating new infrastructure. This lets Image Builder and Terraform integrate
 # cleanly with shared or centrally managed environments.
 # ==============================================================================
 
@@ -92,7 +92,7 @@ data "aws_security_group" "packer_sg_rdp" {
 # ==============================================================================
 #
 # Select the most recently created AMI matching the expected naming convention.
-# This is typically an image produced by a prior Packer build.
+# This is the image produced by 02-image-builder.
 # ==============================================================================
 
 data "aws_ami" "latest_games_ami" {
@@ -119,7 +119,7 @@ data "aws_ami" "latest_games_ami" {
 # AMI LOOKUP: MOST RECENT DESKTOP IMAGE
 # ==============================================================================
 #
-# Select the most recent desktop AMI produced by the Windows Packer pipeline.
+# Select the most recent desktop AMI produced by the Windows recipe.
 # ==============================================================================
 
 data "aws_ami" "latest_desktop_ami" {

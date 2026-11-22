@@ -1,12 +1,12 @@
 # ==============================================================================
-# SECURITY GROUPS FOR PACKER BUILD INFRASTRUCTURE
+# SECURITY GROUPS FOR THE LAB
 # ==============================================================================
 #
-# These security groups are intended for Packer build instances that require
-# temporary network access during image creation.
+# The HTTP, HTTPS, SSH and RDP groups are used by the 03-deploy test servers;
+# the last group is the egress-only group for Image Builder build instances.
 #
 # Notes:
-# - Ingress rules are intentionally permissive for build-time convenience.
+# - Ingress rules are intentionally permissive for demo convenience.
 # - These rules are NOT suitable for production workloads.
 # - Restrict CIDR ranges or remove rules entirely in hardened environments.
 # ==============================================================================
@@ -132,5 +132,32 @@ resource "aws_security_group" "packer_sg_rdp" {
 
   tags = {
     Name = "packer-sg-rdp"
+  }
+}
+
+# ==============================================================================
+# SECURITY GROUP: IMAGE BUILDER BUILD INSTANCES (EGRESS ONLY)
+# ==============================================================================
+#
+# Image Builder drives the build instance through SSM, which the agent
+# reaches outbound over 443. Nothing ever connects in, so this group has no
+# ingress rules at all: no SSH, no WinRM.
+# ==============================================================================
+
+resource "aws_security_group" "image_builder_sg" {
+  name        = "image-builder-sg"
+  description = "Image Builder build instances: outbound only"
+  vpc_id      = aws_vpc.packer-vpc.id
+
+  # Outbound for SSM, S3, Secrets Manager, package mirrors and installers.
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "image-builder-sg"
   }
 }

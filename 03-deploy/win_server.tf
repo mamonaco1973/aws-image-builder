@@ -3,7 +3,7 @@
 # ==============================================================================
 #
 # This resource deploys a desktop server EC2 instance using the most recent
-# custom Windows AMI produced by the Packer desktop image pipeline.
+# custom Windows AMI produced by the Image Builder desktop recipe.
 #
 # The instance is launched into a public subnet and configured for remote
 # access via RDP and AWS Systems Manager.
