@@ -15,11 +15,11 @@
 # SECURITY GROUP: HTTP (PORT 80)
 # ==============================================================================
 
-resource "aws_security_group" "packer_sg_http" {
+resource "aws_security_group" "builder_sg_http" {
   # Security group allowing inbound HTTP traffic.
-  name        = "packer-sg-http"
+  name        = "builder-sg-http"
   description = "Allow inbound HTTP and unrestricted outbound traffic"
-  vpc_id      = aws_vpc.packer-vpc.id
+  vpc_id      = aws_vpc.builder-vpc.id
 
   # Allow inbound HTTP traffic from any IPv4 address.
   ingress {
@@ -38,7 +38,7 @@ resource "aws_security_group" "packer_sg_http" {
   }
 
   tags = {
-    Name = "packer-sg-http"
+    Name = "builder-sg-http"
   }
 }
 
@@ -46,11 +46,11 @@ resource "aws_security_group" "packer_sg_http" {
 # SECURITY GROUP: HTTPS (PORT 443)
 # ==============================================================================
 
-resource "aws_security_group" "packer_sg_https" {
+resource "aws_security_group" "builder_sg_https" {
   # Security group allowing inbound HTTPS traffic.
-  name        = "packer-sg-https"
+  name        = "builder-sg-https"
   description = "Allow inbound HTTPS and unrestricted outbound traffic"
-  vpc_id      = aws_vpc.packer-vpc.id
+  vpc_id      = aws_vpc.builder-vpc.id
 
   # Allow inbound HTTPS traffic from any IPv4 address.
   ingress {
@@ -69,7 +69,7 @@ resource "aws_security_group" "packer_sg_https" {
   }
 
   tags = {
-    Name = "packer-sg-https"
+    Name = "builder-sg-https"
   }
 }
 
@@ -77,11 +77,11 @@ resource "aws_security_group" "packer_sg_https" {
 # SECURITY GROUP: SSH (PORT 22)
 # ==============================================================================
 
-resource "aws_security_group" "packer_ssh" {
+resource "aws_security_group" "builder_ssh" {
   # Security group allowing inbound SSH access.
-  name        = "packer-sg-ssh"
+  name        = "builder-sg-ssh"
   description = "Allow inbound SSH and unrestricted outbound traffic"
-  vpc_id      = aws_vpc.packer-vpc.id
+  vpc_id      = aws_vpc.builder-vpc.id
 
   # Allow inbound SSH traffic from any IPv4 address.
   ingress {
@@ -100,7 +100,7 @@ resource "aws_security_group" "packer_ssh" {
   }
 
   tags = {
-    Name = "packer-sg-ssh"
+    Name = "builder-sg-ssh"
   }
 }
 
@@ -108,11 +108,11 @@ resource "aws_security_group" "packer_ssh" {
 # SECURITY GROUP: RDP (PORT 3389)
 # ==============================================================================
 
-resource "aws_security_group" "packer_sg_rdp" {
+resource "aws_security_group" "builder_sg_rdp" {
   # Security group allowing inbound RDP access.
-  name        = "packer-sg-rdp"
+  name        = "builder-sg-rdp"
   description = "Allow inbound RDP and unrestricted outbound traffic"
-  vpc_id      = aws_vpc.packer-vpc.id
+  vpc_id      = aws_vpc.builder-vpc.id
 
   # Allow inbound RDP traffic from any IPv4 address.
   ingress {
@@ -131,7 +131,7 @@ resource "aws_security_group" "packer_sg_rdp" {
   }
 
   tags = {
-    Name = "packer-sg-rdp"
+    Name = "builder-sg-rdp"
   }
 }
 
@@ -147,7 +147,7 @@ resource "aws_security_group" "packer_sg_rdp" {
 resource "aws_security_group" "image_builder_sg" {
   name        = "image-builder-sg"
   description = "Image Builder build instances: outbound only"
-  vpc_id      = aws_vpc.packer-vpc.id
+  vpc_id      = aws_vpc.builder-vpc.id
 
   # Outbound for SSM, S3, Secrets Manager, package mirrors and installers.
   egress {

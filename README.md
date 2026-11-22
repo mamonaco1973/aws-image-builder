@@ -7,10 +7,9 @@ latest updates, Chrome and Firefox. Both images carry a local `builder`
 account whose password comes from Secrets Manager, and Terraform launches one
 server from each.
 
-This is the [aws-packer](https://github.com/mamonaco1973/aws-packer) demo with
-a different baker. The images, the scripts and the test servers are the same;
-the build runs inside AWS. There is no Packer binary, and no SSH or WinRM
-connection to the build instance: Image Builder drives it through **SSM**.
+Image Builder runs the builds inside AWS and drives each build instance
+through **SSM**: no SSH or WinRM connection, no inbound ports, and nothing to
+install locally beyond Terraform and the AWS CLI.
 
 ![Games server](games.png)
 
@@ -18,8 +17,8 @@ connection to the build instance: Image Builder drives it through **SSM**.
 |---|---|---|
 | **games AMI** | `games_ami_<build date>` | Ubuntu 24.04 + OS updates + Apache + 12 HTML games, SSM agent enabled, `builder` sudo user |
 | **desktop AMI** | `desktop_ami_<build date>` | Windows Server 2025 + Windows updates, Chrome, Firefox, `builder` admin user |
-| **games-ec2-instance** | `packer-subnet-1` (us-east-2a) | `t3.micro` from the newest games AMI; HTTP, HTTPS and SSH open |
-| **desktop-ec2-instance** | `packer-subnet-2` (us-east-2b) | `t3.medium` from the newest desktop AMI; HTTPS and RDP open |
+| **games-ec2-instance** | `builder-subnet-1` (us-east-2a) | `t3.micro` from the newest games AMI; HTTP, HTTPS and SSH open |
+| **desktop-ec2-instance** | `builder-subnet-2` (us-east-2b) | `t3.medium` from the newest desktop AMI; HTTPS and RDP open |
 | **Secrets Manager** | regional | `builder-credentials`: the `builder` user and a generated password |
 | **S3 bucket** | regional | `image-builder-scripts-<random>`: the scripts and HTML the builds download |
 
@@ -32,18 +31,18 @@ connection to the build instance: Image Builder drives it through **SSM**.
 
 Regenerate with `python3 make_diagram.py`.
 
-- **`01-infrastructure/`**: the VPC (`packer-vpc`, 10.0.0.0/24) with two
+- **`01-infrastructure/`**: the VPC (`builder-vpc`, 10.0.0.0/24) with two
   public subnets, the security groups (including the egress-only
   `image-builder-sg` for build instances), and the `builder-credentials`
-  secret. The `packer-*` network names are kept from the Packer version.
+  secret.
 - **`02-image-builder/`**: pure Terraform. Components, recipes, one shared
   infrastructure configuration, a distribution configuration per AMI, and one
   `aws_imagebuilder_image` per AMI. `terraform apply` blocks until both AMIs
-  exist, as `packer build` did.
-- **`02-image-builder/linux/`** and **`windows/`**: the same scripts and HTML
-  as the Packer version, still the source of truth. Terraform uploads them to
-  the S3 bucket and the components pull them with `S3Download`.
-- **`03-deploy/`**: unchanged. The two EC2 instances, launched from the newest
+  exist.
+- **`02-image-builder/linux/`** and **`windows/`**: the scripts and HTML the
+  builds run. Terraform uploads them to the S3 bucket and the components pull
+  them with `S3Download`.
+- **`03-deploy/`**: the two EC2 instances, launched from the newest
   `games_ami*` and `desktop_ami*` images, and their SSM instance profile.
 
 ## How the images are built
@@ -79,20 +78,6 @@ Image Builder then snapshots the instance into the AMI, names it from the
 distribution configuration (`games_ami_{{ imagebuilder:buildDate }}`), and
 terminates the build instance. Both images build in parallel.
 
-### What changed from the Packer version
-
-| Packer | Image Builder |
-|---|---|
-| `packer build` from your machine | `terraform apply` on `02-image-builder/`; the build runs in AWS |
-| SSH (Linux) and WinRM over HTTPS (Windows) into the build instance | SSM; the build security group has **no inbound rules** |
-| `bootstrap_win.ps1` set the Administrator password and configured WinRM | **Dropped**: nothing connects to the instance, so there is nothing to set up |
-| `apply.sh` read the password and passed it to Packer as a variable | The build instance reads the secret itself with its instance profile; the password is never a component parameter, so it never shows in the console |
-| `windows-update` plugin + `windows-restart` | AWS-managed `update-windows` component |
-| No OS updates on Linux | AWS-managed `update-linux` component |
-| `file` provisioners | Scripts uploaded to S3, `S3Download` steps |
-| Explicit `ec2launch reset` and `sysprep` | Not needed; the `boot.log` check in `validate.sh` proves userdata still runs on new instances |
-| `packer` user and `packer-credentials` secret | `builder` user and `builder-credentials` secret |
-
 ### Versions are immutable
 
 Components and recipes are versioned, and a name and version pair can hold
@@ -110,7 +95,7 @@ internet ─443, 3389──▶ desktop-ec2-instance
 build instances ─443─▶ SSM, S3, Secrets Manager, package mirrors (outbound only)
 ```
 
-The four server groups (`packer-sg-http`, `-https`, `-ssh`, `-rdp`) allow
+The four server groups (`builder-sg-http`, `-https`, `-ssh`, `-rdp`) allow
 `0.0.0.0/0`. The games server's user data turns on SSH password logins, so
 `builder` can sign in over SSH as well as SSM. Build instances get a public IP
 from the subnet and reach AWS through the internet gateway; there are no VPC
@@ -122,8 +107,6 @@ endpoints.
 * [Install AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 * [Install Terraform](https://developer.hashicorp.com/terraform/install)
 * [Install jq](https://jqlang.github.io/jq/download/)
-
-No Packer install is needed.
 
 If this is your first time watching our content, we recommend starting with
 this video: [AWS + Terraform: Easy Setup](https://youtu.be/BCMQo0CB9wk).

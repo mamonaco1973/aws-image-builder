@@ -2,17 +2,13 @@
 # WINDOWS DESKTOP AMI: COMPONENT, RECIPE, DISTRIBUTION, IMAGE
 # ==============================================================================
 #
-# Same result as windows_ami.pkr.hcl: Windows Server 2025, fully updated,
-# with the builder account, Chrome, Firefox, a clean desktop and boot.ps1
-# in C:\mcloud\ for userdata to run on each new instance.
+# Windows Server 2025, fully updated, with the builder account, Chrome,
+# Firefox, a clean desktop and boot.ps1 in C:\mcloud\ for userdata to run on
+# each new instance.
 #
 # Recipe order:
-#   1. update-windows  (AWS-managed: installs updates, reboots as needed;
-#                       replaces the windows-update and windows-restart
-#                       Packer provisioners)
+#   1. update-windows  (AWS-managed: installs updates, reboots as needed)
 #   2. desktop-setup   (ours: security, boot.ps1, Chrome, Firefox, desktop)
-#
-# bootstrap_win.ps1 is gone: it only existed to set up WinRM for Packer.
 # ==============================================================================
 
 locals {
@@ -160,7 +156,7 @@ resource "aws_imagebuilder_distribution_configuration" "desktop" {
     region = local.region
 
     ami_distribution_configuration {
-      # 03-deploy finds the newest desktop_ami* image, as it did with Packer.
+      # 03-deploy finds the newest desktop_ami* image.
       name = "desktop_ami_{{ imagebuilder:buildDate }}"
 
       ami_tags = {

@@ -2,8 +2,8 @@
 # LINUX GAMES AMI: COMPONENT, RECIPE, DISTRIBUTION, IMAGE
 # ==============================================================================
 #
-# Same result as linux_ami.pkr.hcl: Ubuntu 24.04 with Apache serving the
-# HTML games and a local builder account with a password and sudo.
+# Ubuntu 24.04 with Apache serving the HTML games and a local builder account
+# with a password and sudo.
 #
 # Recipe order:
 #   1. update-linux             (AWS-managed: apt upgrade)
@@ -25,7 +25,7 @@ resource "aws_imagebuilder_component" "games_setup" {
       name = "build"
       steps = [
         {
-          # Same staging paths the Packer file provisioners used.
+          # Stage the scripts and HTML under /tmp.
           name   = "DownloadFiles"
           action = "S3Download"
           inputs = [
@@ -136,7 +136,7 @@ resource "aws_imagebuilder_distribution_configuration" "games" {
     region = local.region
 
     ami_distribution_configuration {
-      # 03-deploy finds the newest games_ami* image, as it did with Packer.
+      # 03-deploy finds the newest games_ami* image.
       name = "games_ami_{{ imagebuilder:buildDate }}"
 
       ami_tags = {

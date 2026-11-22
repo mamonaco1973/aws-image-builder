@@ -11,7 +11,7 @@
 # VPC: LOOKUP BY NAME TAG
 # ==============================================================================
 
-data "aws_vpc" "packer_vpc" {
+data "aws_vpc" "builder_vpc" {
   # Resolve the target VPC using its Name tag value.
   filter {
     name   = "tag:Name"
@@ -23,7 +23,7 @@ data "aws_vpc" "packer_vpc" {
 # SUBNETS: LOOKUP PUBLIC SUBNETS BY NAME TAG
 # ==============================================================================
 
-data "aws_subnet" "packer_subnet_1" {
+data "aws_subnet" "builder_subnet_1" {
   # Resolve the first public subnet using its Name tag.
   filter {
     name   = "tag:Name"
@@ -31,7 +31,7 @@ data "aws_subnet" "packer_subnet_1" {
   }
 }
 
-data "aws_subnet" "packer_subnet_2" {
+data "aws_subnet" "builder_subnet_2" {
   # Resolve the second public subnet using its Name tag.
   filter {
     name   = "tag:Name"
@@ -47,44 +47,44 @@ data "aws_subnet" "packer_subnet_2" {
 # to avoid accidental matches across environments.
 # ==============================================================================
 
-data "aws_security_group" "packer_sg_http" {
+data "aws_security_group" "builder_sg_http" {
   # Lookup the HTTP security group within the target VPC.
   filter {
     name   = "tag:Name"
     values = [var.sg_name_http]
   }
 
-  vpc_id = data.aws_vpc.packer_vpc.id
+  vpc_id = data.aws_vpc.builder_vpc.id
 }
 
-data "aws_security_group" "packer_sg_https" {
+data "aws_security_group" "builder_sg_https" {
   # Lookup the HTTPS security group within the target VPC.
   filter {
     name   = "tag:Name"
     values = [var.sg_name_https]
   }
 
-  vpc_id = data.aws_vpc.packer_vpc.id
+  vpc_id = data.aws_vpc.builder_vpc.id
 }
 
-data "aws_security_group" "packer_sg_ssh" {
+data "aws_security_group" "builder_sg_ssh" {
   # Lookup the SSH security group within the target VPC.
   filter {
     name   = "tag:Name"
     values = [var.sg_name_ssh]
   }
 
-  vpc_id = data.aws_vpc.packer_vpc.id
+  vpc_id = data.aws_vpc.builder_vpc.id
 }
 
-data "aws_security_group" "packer_sg_rdp" {
+data "aws_security_group" "builder_sg_rdp" {
   # Lookup the RDP security group within the target VPC.
   filter {
     name   = "tag:Name"
     values = [var.sg_name_rdp]
   }
 
-  vpc_id = data.aws_vpc.packer_vpc.id
+  vpc_id = data.aws_vpc.builder_vpc.id
 }
 
 # ==============================================================================

@@ -2,14 +2,14 @@
 # EC2 IMAGE BUILDER: GAMES (UBUNTU) AND DESKTOP (WINDOWS) AMIS
 # ==============================================================================
 #
-# This phase replaces the Packer templates. Terraform defines the Image
-# Builder pieces (components, recipes, infrastructure and distribution
-# configurations) and one aws_imagebuilder_image per AMI. Creating an image
-# resource starts a build and blocks until the AMI exists, so `terraform
-# apply` here does what `packer build` did.
+# Terraform defines the Image Builder pieces (components, recipes,
+# infrastructure and distribution configurations) and one
+# aws_imagebuilder_image per AMI. Creating an image resource starts a build
+# and blocks until the AMI exists, so `terraform apply` here produces both
+# AMIs.
 #
 # Image Builder drives the build instance through SSM: there is no SSH or
-# WinRM communicator, no inbound port, and no Packer binary.
+# WinRM connection and no inbound port.
 #
 # The scripts in linux/ and windows/ stay the source of truth. They are
 # uploaded to an S3 bucket created here, and the components pull them with
@@ -54,7 +54,7 @@ data "aws_subnet" "build_subnet" {
   # IP, its only route to SSM, S3 and Secrets Manager (no VPC endpoints).
   filter {
     name   = "tag:Name"
-    values = ["packer-subnet-1"]
+    values = ["builder-subnet-1"]
   }
 }
 
@@ -74,7 +74,7 @@ data "aws_secretsmanager_secret" "builder_credentials" {
 }
 
 # ==============================================================================
-# BASE IMAGES: SAME FILTERS AS THE PACKER TEMPLATES
+# BASE IMAGES
 # ==============================================================================
 
 data "aws_ami" "ubuntu" {

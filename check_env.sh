@@ -2,8 +2,8 @@
 # ==============================================================================
 # check_env.sh — confirm the tools and AWS credentials the lab needs
 #
-# No Packer here: Image Builder runs the builds inside AWS, so Terraform and
-# the AWS CLI are all that has to be installed locally.
+# Image Builder runs the builds inside AWS, so Terraform and the AWS CLI are
+# all that has to be installed locally.
 # ==============================================================================
 
 set -euo pipefail

@@ -20,12 +20,12 @@ resource "aws_instance" "desktop_server" {
   # Network placement
   # --------------------------------------------------------------------------
   # Launch the instance in the second public subnet.
-  subnet_id = data.aws_subnet.packer_subnet_2.id
+  subnet_id = data.aws_subnet.builder_subnet_2.id
 
   # Attach security groups required for desktop access.
   vpc_security_group_ids = [
-    data.aws_security_group.packer_sg_https.id,
-    data.aws_security_group.packer_sg_rdp.id
+    data.aws_security_group.builder_sg_https.id,
+    data.aws_security_group.builder_sg_rdp.id
   ]
 
   # Assign a public IP address to allow external connectivity.

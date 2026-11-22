@@ -5,7 +5,7 @@
 # A minimal public VPC for Image Builder build instances and the test servers.
 # Build instances get a public IP from map_public_ip_on_launch and reach SSM,
 # S3, Secrets Manager and package mirrors through the Internet Gateway; there
-# are no VPC endpoints. (The packer-* names are kept from the Packer version.)
+# are no VPC endpoints.
 #
 # Topology:
 # - One VPC (10.0.0.0/24)
@@ -19,7 +19,7 @@
 # VPC
 # ==============================================================================
 
-resource "aws_vpc" "packer-vpc" {
+resource "aws_vpc" "builder-vpc" {
   # Primary VPC CIDR block used for all subnets in this module.
   cidr_block = "10.0.0.0/24"
 
@@ -29,10 +29,10 @@ resource "aws_vpc" "packer-vpc" {
 
   tags = {
     # Human-readable name for identification in the AWS console.
-    Name = "packer-vpc"
+    Name = "builder-vpc"
 
     # Optional logical grouping tag (not an AWS-native resource group).
-    ResourceGroup = "packer-asg-rg"
+    ResourceGroup = "builder-asg-rg"
   }
 }
 
@@ -40,13 +40,13 @@ resource "aws_vpc" "packer-vpc" {
 # INTERNET GATEWAY
 # ==============================================================================
 
-resource "aws_internet_gateway" "packer-igw" {
+resource "aws_internet_gateway" "builder-igw" {
   # Attach the Internet Gateway to the VPC to enable internet routing.
-  vpc_id = aws_vpc.packer-vpc.id
+  vpc_id = aws_vpc.builder-vpc.id
 
   tags = {
     # Name tag for identification in the AWS console.
-    Name = "packer-igw"
+    Name = "builder-igw"
   }
 }
 
@@ -56,7 +56,7 @@ resource "aws_internet_gateway" "packer-igw" {
 
 resource "aws_route_table" "public" {
   # Route table associated with the VPC for public subnet routing.
-  vpc_id = aws_vpc.packer-vpc.id
+  vpc_id = aws_vpc.builder-vpc.id
 
   tags = {
     # Name tag for identification in the AWS console.
@@ -72,16 +72,16 @@ resource "aws_route" "default_route" {
   destination_cidr_block = "0.0.0.0/0"
 
   # Send default traffic to the Internet Gateway.
-  gateway_id = aws_internet_gateway.packer-igw.id
+  gateway_id = aws_internet_gateway.builder-igw.id
 }
 
 # ==============================================================================
 # PUBLIC SUBNETS
 # ==============================================================================
 
-resource "aws_subnet" "packer-subnet-1" {
+resource "aws_subnet" "builder-subnet-1" {
   # Place subnet 1 in the VPC.
-  vpc_id = aws_vpc.packer-vpc.id
+  vpc_id = aws_vpc.builder-vpc.id
 
   # First /26 block within the /24 (64 total addresses, fewer usable).
   cidr_block = "10.0.0.0/26"
@@ -94,13 +94,13 @@ resource "aws_subnet" "packer-subnet-1" {
 
   tags = {
     # Name tag for identification in the AWS console.
-    Name = "packer-subnet-1"
+    Name = "builder-subnet-1"
   }
 }
 
-resource "aws_subnet" "packer-subnet-2" {
+resource "aws_subnet" "builder-subnet-2" {
   # Place subnet 2 in the VPC.
-  vpc_id = aws_vpc.packer-vpc.id
+  vpc_id = aws_vpc.builder-vpc.id
 
   # Second /26 block within the /24 (64 total addresses, fewer usable).
   cidr_block = "10.0.0.64/26"
@@ -113,7 +113,7 @@ resource "aws_subnet" "packer-subnet-2" {
 
   tags = {
     # Name tag for identification in the AWS console.
-    Name = "packer-subnet-2"
+    Name = "builder-subnet-2"
   }
 }
 
@@ -123,7 +123,7 @@ resource "aws_subnet" "packer-subnet-2" {
 
 resource "aws_route_table_association" "public_rta_1" {
   # Associate subnet 1 with the public route table.
-  subnet_id = aws_subnet.packer-subnet-1.id
+  subnet_id = aws_subnet.builder-subnet-1.id
 
   # Use the route table that contains the default IGW route.
   route_table_id = aws_route_table.public.id
@@ -131,7 +131,7 @@ resource "aws_route_table_association" "public_rta_1" {
 
 resource "aws_route_table_association" "public_rta_2" {
   # Associate subnet 2 with the public route table.
-  subnet_id = aws_subnet.packer-subnet-2.id
+  subnet_id = aws_subnet.builder-subnet-2.id
 
   # Use the route table that contains the default IGW route.
   route_table_id = aws_route_table.public.id

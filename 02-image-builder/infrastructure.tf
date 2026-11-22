@@ -2,7 +2,7 @@
 # INFRASTRUCTURE CONFIGURATION: WHERE AND HOW BUILD INSTANCES RUN
 # ==============================================================================
 #
-# Shared by both images. The build instance launches in packer-subnet-1
+# Shared by both images. The build instance launches in builder-subnet-1
 # (public, auto-assigned public IP) with the egress-only image-builder-sg.
 # ==============================================================================
 

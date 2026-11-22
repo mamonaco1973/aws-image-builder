@@ -118,11 +118,11 @@ NODES.update({
     "winbase":  (COL[2], ROW[0], "navy", "layers", "Windows Server 2025",
                  "Amazon base AMI"),
     "gbuild":   (COL[0], ROW[1], "purple", "terminal", "games build",
-                 "m5.large, packer-subnet-1", "dashed"),
+                 "m5.large, builder-subnet-1", "dashed"),
     "bucket":   (COL[1], ROW[1], "store", "database", "S3 scripts bucket",
                  "linux/ + windows/"),
     "dbuild":   (COL[2], ROW[1], "purple", "terminal", "desktop build",
-                 "m5.large, packer-subnet-1", "dashed"),
+                 "m5.large, builder-subnet-1", "dashed"),
     "games":    (COL[0], ROW[2], "blue", "layers", "games AMI",
                  "Apache + 12 HTML games"),
     "secret":   (COL[1], ROW[2], "store", "key", "Secrets Manager",
@@ -130,11 +130,11 @@ NODES.update({
     "desktop":  (COL[2], ROW[2], "blue", "layers", "desktop AMI",
                  "updates, Chrome, Firefox"),
     "gsrv":     (COL[0], ROW[3], "amber", "monitor", "games-ec2-instance",
-                 "t3.micro, packer-subnet-1"),
+                 "t3.micro, builder-subnet-1"),
     "client":   (COL[1], ROW[3], "navy", "globe", "Browser / RDP client",
                  "from the internet"),
     "dsrv":     (COL[2], ROW[3], "amber", "monitor", "desktop-ec2-instance",
-                 "t3.medium, packer-subnet-2"),
+                 "t3.medium, builder-subnet-2"),
 })
 
 ub, ib, wb = _r("ubuntu"), _r("ib"), _r("winbase")

@@ -13,47 +13,47 @@ variable "vpc_name_tag" {
   # Name tag of the target VPC to be discovered.
   description = "Name tag of the existing VPC"
   type        = string
-  default     = "packer-vpc"
+  default     = "builder-vpc"
 }
 
 variable "subnet_name_tag_1" {
   # Name tag of the first public subnet used for instance placement.
   description = "Name tag of the first public subnet"
   type        = string
-  default     = "packer-subnet-1"
+  default     = "builder-subnet-1"
 }
 
 variable "subnet_name_tag_2" {
   # Name tag of the second public subnet used for instance placement.
   description = "Name tag of the second public subnet"
   type        = string
-  default     = "packer-subnet-2"
+  default     = "builder-subnet-2"
 }
 
 variable "sg_name_http" {
   # Name tag of the security group allowing inbound HTTP traffic.
   description = "Name tag of the security group for HTTP"
   type        = string
-  default     = "packer-sg-http"
+  default     = "builder-sg-http"
 }
 
 variable "sg_name_https" {
   # Name tag of the security group allowing inbound HTTPS traffic.
   description = "Name tag of the security group for HTTPS"
   type        = string
-  default     = "packer-sg-https"
+  default     = "builder-sg-https"
 }
 
 variable "sg_name_ssh" {
   # Name tag of the security group allowing inbound SSH access.
   description = "Name tag of the security group for SSH"
   type        = string
-  default     = "packer-sg-ssh"
+  default     = "builder-sg-ssh"
 }
 
 variable "sg_name_rdp" {
   # Name tag of the security group allowing inbound RDP access.
   description = "Name tag of the security group for RDP"
   type        = string
-  default     = "packer-sg-rdp"
+  default     = "builder-sg-rdp"
 }

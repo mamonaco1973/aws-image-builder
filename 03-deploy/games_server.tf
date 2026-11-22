@@ -20,13 +20,13 @@ resource "aws_instance" "games_server" {
   # Network placement
   # --------------------------------------------------------------------------
   # Launch the instance in the first public subnet.
-  subnet_id = data.aws_subnet.packer_subnet_1.id
+  subnet_id = data.aws_subnet.builder_subnet_1.id
 
   # Attach security groups controlling inbound access.
   vpc_security_group_ids = [
-    data.aws_security_group.packer_sg_http.id,
-    data.aws_security_group.packer_sg_https.id,
-    data.aws_security_group.packer_sg_ssh.id
+    data.aws_security_group.builder_sg_http.id,
+    data.aws_security_group.builder_sg_https.id,
+    data.aws_security_group.builder_sg_ssh.id
   ]
 
   # Assign a public IP address for external access.
